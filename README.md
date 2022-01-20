@@ -49,7 +49,6 @@ Combine these two vulnerabilities, that attack can realize RCE
   
   
     # DIR-825
-    # arch:mipsel
     # hw:G1
     # fw:7.XX
     import urllib
