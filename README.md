@@ -1,12 +1,12 @@
-# D-Link DAP-1360 Authorization Remote Command Execution
-An authorization command injection vulnerability about DAP-1360
+# D-Link DIR-825 Unauthorized Remote Command Execution
+An authorization command injection vulnerability about DIR-825
 
 </br>**Exploit Author:** KeenSight Lab.Tgp (topsuchow@gmail.com)
 </br>**Vender:** D-Link
 
 ## /cgi-bin/webupg
 **Firmware version:** 
-DAP-1360(F1): <=v6.10
+DIR-825(G1): all
 </br>......
 <br/>**Hardware Link:**https://downloads.d-link.co.za/DAP/dap1360/Firmware/Hardware%20Version%20F/
 ## The detail of vulnerability
