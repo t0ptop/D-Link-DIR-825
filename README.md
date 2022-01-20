@@ -8,9 +8,10 @@ An authorization command injection vulnerability about DIR-825
 **Firmware version:** 
 DIR-825(G1): all
 </br>......
-<br/>**Hardware Link:**https://downloads.d-link.co.za/DAP/dap1360/Firmware/Hardware%20Version%20F/
+<br/>**Hardware Link:**https://downloads.d-link.co.za/DIR/dir825%20(new)/firmware/
 ## The detail of vulnerability
-In the "webupg" binary, because of the lack of parameter verification, attackers can use "file" parameters to execute arbitrary system commands after obtaining authorization.
+#### 1.Authentication bypasses the vulnerability
+In the "webupg" binary, attackers can bypass authentication through parameters "autoupgrade.asp", and perform functions such as downloading configuration files and updating firmware without authorization.
 
 #### Vulnerability trigger function
 ![image](https://github.com/tgp-top/DAP-1360/blob/4f10977bb7356d1393fefcba24ca438be95248b2/%E5%9B%BE%E7%89%87/5.png)
